@@ -866,7 +866,7 @@ def setup_schema(cur):
     cur.execute("CREATE TABLE Months_HR(Patient_ID TEXT, Month TEXT, avg_HR FLOAT, PRIMARY KEY(Patient_ID, Month), UNIQUE(Patient_ID, Month), FOREIGN KEY(Patient_ID) REFERENCES Patients(Patient_ID), FOREIGN KEY(Month) REFERENCES Months(Month))")
     cur.execute("CREATE TABLE Weeks(Week TEXT, PRIMARY KEY(Week))")
     cur.execute("CREATE TABLE Weeks_HR(Patient_ID TEXT, Week TEXT, avg_HR FLOAT, PRIMARY KEY(Patient_ID, Week),UNIQUE(Patient_ID, Week), FOREIGN KEY(Patient_ID) REFERENCES Patients(Patient_ID), FOREIGN KEY(Week) REFERENCES Weeks(Week))")    
-    cur.execute("CREATE TABLE Dates(Date TEXT,Week TEXT, PRIMARY KEY(Date), FOREIGN KEY(Week) REFERENCES Weeks(Week))")
+    cur.execute("CREATE TABLE Dates(Date TEXT,Week TEXT, Month TEXT, PRIMARY KEY(Date), FOREIGN KEY(Week) REFERENCES Weeks(Week), FOREIGN KEY(Month) REFERENCES Months(Month))")
     cur.execute("CREATE TABLE Daily_Vitals(Date_Vitals Integer, Patient_ID TEXT, Date TEXT, Day_avg_HR FLOAT, Day_min_HR FLOAT, Day_max_HR FLOAT, Resting_HR FLOAT, Avg_PPG_HRV_Day FLOAT, Std_PPG_HRV_Day FLOAT,UNIQUE(Patient_ID, Date), PRIMARY KEY(Date_Vitals AUTOINCREMENT), FOREIGN KEY(Patient_ID) REFERENCES Patients(Patient_ID), FOREIGN KEY(Date) REFERENCES Dates(Date))")
     cur.execute("CREATE TABLE Activities(Date_Vitals Integer, Avg_Active_HR FLOAT, PRIMARY KEY(Date_Vitals), FOREIGN KEY(Date_Vitals) REFERENCES Daily_Vitals(Date_Vitals))")
     cur.execute("CREATE TABLE Night_Vitals(Date_Vitals Integer, Night_avg_HR FLOAT, Night_min_HR FLOAT, Night_max_HR FLOAT, Avg_PPG_HRV_Night FLOAT, Std_PPG_HRV_Night, PRIMARY KEY(Date_Vitals), FOREIGN KEY(Date_Vitals) REFERENCES Daily_Vitals(Date_Vitals))")
@@ -989,7 +989,7 @@ def databasing(metrics,Flag=True):
     try:
         dates=sorted(np.unique(np.concatenate(metrics['day_dates'])),key=lambda x: datetime.strptime(x, '%Y-%m-%d'))
         for date in dates:
-            cur.execute("""INSERT OR IGNORE INTO Dates(Date,Week) VALUES(?,?)""",(date,pd.to_datetime(date).strftime('%G-W%V')))
+            cur.execute("""INSERT OR IGNORE INTO Dates(Date,Week,Month) VALUES(?,?,?)""",(date,pd.to_datetime(date).strftime('%G-W%V'),pd.to_datetime(date).strftime('%b %Y')))
     except Exception as e:
         print(f'No day data:{e}')
 
