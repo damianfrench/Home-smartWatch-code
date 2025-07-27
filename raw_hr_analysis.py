@@ -35,6 +35,7 @@ def sortingHeartRate(number,data_path,
 
     Parameters:
         number (int or str): Identifier used to locate the patient's or volunteer's data file.
+        data_path: Path to access the Heart Rate data
         patient (bool, optional): If True, loads data from the patient directory;
                                   if False, loads from the volunteer directory. Default is True.
 
@@ -43,7 +44,6 @@ def sortingHeartRate(number,data_path,
 
     Notes:
         - Expects the CSV file to contain a 'start' column with ISO8601-formatted timestamps.
-        - File paths are hardcoded and must match the data directory structure.
     """
     if patient:
         heartRate=(pd.read_csv(f'{data_path}/record{number}/raw_hr_hr.csv',header=0))
@@ -65,6 +65,7 @@ def sortingActivityData(number,data_path,
 
     Parameters:
         number (int or str): Identifier used to locate the patient's or volunteer's activity file.
+        data_path: Path to access the Heart Rate data
         patient (bool, optional): If True, loads data from the patient directory;
                                   if False, loads from the volunteer directory. Default is True.
 
@@ -75,7 +76,6 @@ def sortingActivityData(number,data_path,
 
     Notes:
         - Assumes activity CSV contains 'from' and 'to' columns in ISO8601 format.
-        - File paths are hardcoded to match the data directory structure.
     """
     #loads activity data into array and returns the start and end times
     if patient:
@@ -88,6 +88,19 @@ def sortingActivityData(number,data_path,
     return activities['from'],activities['to']
 
 def reading_sleep_Data(number,data_path,patient=True):
+    """
+    Loads and parses sleep data.
+
+    Parameters:
+        number (int or str): Identifier used to locate the patient's or volunteer's activity file.
+        data_path: Path to access the Heart Rate data
+        patient (bool, optional): If True, loads data from the patient directory;
+                                  if False, loads from the volunteer directory. Default is True.
+    Returns:
+         pandas.DataFrame: Sleep data with timestamps parsed as UTC.
+    
+    """
+
     if patient:
         sleep_data=(pd.read_csv(f'{data_path}/record{number}/sleep.csv',header=0))
     else:
@@ -137,6 +150,10 @@ def months_calc(data,number,saving_path,Flag):
         - 'value': numeric heart rate values corresponding to each timestamp.
     number : int or str
         Identifier (e.g., patient number) used for saving plot files to a directory.
+    saving_path : string
+        Directory path to save plots to
+    Flag : bool
+        Boolean Flag determining if plots should be produced
 
     Returns
     -------
@@ -147,7 +164,7 @@ def months_calc(data,number,saving_path,Flag):
     ------------
     - Displays a plot of heart rate vs. date for each month.
     - Saves each monthly heart rate plot as a PNG file in a directory path
-      based on the given `number`.
+      based on the given `number` and 'saving_path'
     """
     avg_hr_per_month=[] # list to store the average heart rate for each month
     # finds the unique months in the data and returns them
@@ -193,6 +210,10 @@ def week_calc(data,number,saving_path,Flag):
         - 'value': numeric heart rate values corresponding to each timestamp.
     number : int or str
         Identifier (e.g., patient number) used for saving plot files to a directory.
+    saving_path : string
+        Directory path to save plots to
+    Flag : bool
+        Boolean Flag determining if plots should be produced
 
     Returns
     -------
@@ -205,7 +226,7 @@ def week_calc(data,number,saving_path,Flag):
     ------------
     - Displays a plot of heart rate vs. date for each week.
     - Saves each weekly heart rate plot as a PNG file in a directory path
-      based on the given `number`.
+      based on the given `number` and 'saving_path'.
     """
     avg_hr_weekly=[]
     weeks=data['start'].dt.strftime('%G-W%V').unique() # finds the unique weeks in the data
@@ -252,6 +273,12 @@ def active_days_calc(data,number,patient,data_path,saving_path,Flag):
         Identifier for the patient or volunteer, used to load activity data and save plots.
     patient : bool
         If True, load patient activity data; if False, load volunteer activity data.
+    data_path : string
+        Directory path to access activity data
+    saving_path : string
+        Directory path to save plots to
+    Flag : bool
+        Boolean Flag determining if plots should be produced
 
     Returns
     -------
@@ -263,7 +290,7 @@ def active_days_calc(data,number,patient,data_path,saving_path,Flag):
     Side Effects
     ------------
     - Displays a plot for each active day showing heart rate over time with activity start/end times marked.
-    - Saves plots as PNG files in a directory path based on the provided `number`.
+    - Saves plots as PNG files in a directory path based on the provided `number` and 'saving_path'.
     """
 
     avg_hr_active_days=[] # list to store the average heart rate for each day with activity
@@ -315,6 +342,10 @@ def total_timespan(data,number,saving_path,Flag):
         - 'value': numeric heart rate values.
     number : int or str
         Identifier used to determine the directory path for saving the plot.
+    saving_path : string
+        Directory path to save plots to
+    Flag : bool
+        Boolean Flag determining if plots should be produced
 
     Returns
     -------
@@ -324,8 +355,6 @@ def total_timespan(data,number,saving_path,Flag):
     Side Effects
     ------------
     - Displays a plot of heart rate over the study duration.
-    - Saves the plot as a PNG file in the directory: 
-    '/data/t/smartWatch/patients/completeData/DamianInternshipFiles/heartRateRecord{number}/Full'
     """
     time_y = data['value']  # extracts the heart rate values from the data
     time_x=data['start']
@@ -360,6 +389,12 @@ def days_and_nights(data,number,patient,data_path,saving_path,Flag):
         DataFrame containing heart rate data. Must have a 'start' datetime column and a 'value' column for heart rate.
     number : int or str
         Identifier used to construct the save path for output plots.
+    data_path : string
+        Directory path to access activity data
+    saving_path : string
+        Directory path to save plots to
+    Flag : bool
+        Boolean Flag determining if plots should be produced
 
     Returns
     -------
@@ -430,10 +465,14 @@ def resting_max_and_min(night_mask,day_mask,time_index,day_data,night_data,sleep
         - 'day_date'
         - 'day_avg', 'day_min', 'day_max'
         - 'resting_hr' : minimum 5-point rolling average during night-time
+        - 'avg_PPG_HRV_day'
+        - 'std_PPG_HRV_day'
     night_df
         A DataFrame containing the following columns for each date:
         - 'night_data'
         - 'night_avg', 'night_min', 'night_max'
+        - 'avg_PPG_HRV_night'
+        - 'std_PPG_HRV_night'
     """
     day_results=[]
     night_results=[]
@@ -553,9 +592,6 @@ def plotting(data,number,data_path,saving_path,Flags=None):
             - Flags.active: Plot active-day heart rate patterns.
             - Flags.total: Plot overall average HR trends.
             - Flags.day_and_night: Plot day/night averages and min/max HR.
-
-    p : bool
-        patient or volunteer identifier passed to active_days_calc.
 
 
     Returns
@@ -811,6 +847,15 @@ def DFA_analysis(RR,patientNum,data_type,saving_path,plot=True):
     return H_hat,m,logn
 
 def setup_schema(cur):
+
+    """
+    sets up the schema for the database
+
+    Parameters:
+        cur: cursor for current database
+    Returns: 
+        None.
+    """
     tables=['Months','Weeks','Activities','Patients','Months_HR','Weeks_HR','Dates','Daily_Vitals','Night_Vitals','ECG_Vitals']
 
     for table in tables:
@@ -830,16 +875,9 @@ def setup_schema(cur):
 
 
 
-def databasing(metrics,Flags=None):
+def databasing(metrics,Flag=True):
     """
-    Creates and populates a SQLite database with various patient or volunteer heart rate metrics.
-
-    Depending on the enabled flags, this function builds tables for:
-    - Average monthly heart rates
-    - Weekly heart rates
-    - Active day heart rates
-    - General patient metrics (e.g., average HR, scaling exponents)
-    - Day vs. night HR statistics
+    Creates and populates a SQLite normalised relational database with various patient or volunteer heart rate metrics.
 
     Parameters:
         metrics (dict): A dictionary containing all heart rate and patient-related metrics. Expected keys include:
@@ -855,21 +893,15 @@ def databasing(metrics,Flags=None):
             - 'scaling_exponent_noise', 'scaling_exponent_linear': PPG DFA exponents
             - 'ECG_scaling_exponent_noise', 'ECG_scaling_exponent_linear': ECG DFA exponents
             - 'crossover_PPG', 'crossover_ECG': crossover points for DFA plots
-            - 'days', 'day_avg', 'night_avg', 'day_min', 'night_min', 'day_max', 'night_max', 'resting_hr': time-series metrics
+            - 'day_dates', 'night_dates', 'day_avg', 'night_avg', 'day_min', 'night_min', 'day_max', 'night_max', 'resting_hr', 'avg_PPG_HRV_day', 'std_PPG_HRV_day',
+              'avg_PPG_HRV_night', 'std_PPG_HRV_night', 'avg_ECG_HRV', 'std_ECG_HRV': time-series metrics
         patient (bool): If True, saves data to `patient_metrics.db`; else saves to `volunteer_metrics.db`.
-        months_on (bool): If True, includes and stores monthly average HR data.
-        weeks_on (bool): If True, includes and stores weekly average HR data.
-        active_on (bool): If True, includes and stores average HR during active periods.
-        total_on (bool): If True, stores overall patient metrics like averages and scaling exponents.
-        day_and_night_on (bool): If True, stores daily HR metrics (day/night/resting).
 
     Notes:
         - Existing tables will be dropped before being recreated.
-        - Tables created: Months, Weeks, Active, Patients, DayAndNight
-        - Relationships are defined via the 'Number' column as a key between tables.
 
     """
-    db_name = 'patient_metrics.db' if Flags.patient_analysis else 'volunteer_metrics.db'
+    db_name = 'patient_metrics.db' if Flag else 'volunteer_metrics.db'
     con = sqlite3.connect(db_name)
     cur = con.cursor()
     setup_schema(cur)
@@ -960,12 +992,7 @@ def databasing(metrics,Flags=None):
             cur.execute("""INSERT OR IGNORE INTO Dates(Date) VALUES(?)""",(date,))
     except:
         print(f'No day data:{e}')
-    
 
-
-
-
-            
     con.commit() # commits and closes the database
     con.close()
 
@@ -1311,6 +1338,18 @@ def plotting_scaling_pattern(log_n,log_f,patient_num,fig,ax,type,saving_path):
 
 
 def ECG_HRV_info(ECG_RR,ECG_R_times):
+    """
+    Determins the avg HRV and std for each ECG and returns it in a pandas dataframe
+
+    Parameters:
+        ECG_RR: np.ndarray
+            contains RR intervals for all ECGs
+        ECG_R_times: np.ndarray
+            contains the dates of each ECG
+    Returns:
+        ECG_RR_df: pd.Dataframe
+    
+    """
     ECG_RR_data=[]    
     for i,RR in enumerate(ECG_RR.T):
         date=pd.to_datetime(ECG_R_times[i],format='ISO8601',utc=True).strftime('%Y-%m-%d:%H')
@@ -1330,6 +1369,7 @@ def ECG_HRV(ECG_RR,ECG_R_times,patientNum,saving_path):
     Parameters:
         ECG_RR (np.ndarray): 2D array of RR intervals from ECG data.
         patientNum (str or int): Identifier for the patient (used for file saving path).
+        saving_path (str): directory path to save plots to.
 
     Returns:
         np.ndarray: Cleaned, flattened RR interval array.
@@ -1382,6 +1422,20 @@ def avg_scaling_pattern(scaling_patterns):
 
 
 def plotting_scaling_pattern_difference(scaling_patterns1,scaling_patterns2,type1,type2,saving_path,patient=True,DFA_on=True):
+    """
+    Measures the trend in differences between scaling patterns over patients and plots the differences for each patient, overlayed to see general pattern.
+    Also calcualates the maximum sepreation in scaling pattern difference and produces a mean difference plot.
+
+    Parameters:
+        scaling_patterns (DataFrame): DataFrame containing 'gradient' and 'log_n' columns.
+        patientNum (str): Patient number for labeling the plot.
+        type1 (str), type2 (str): Type of data (e.g., 'PPG', 'ECG') for labeling the plot.
+        saving_path (str): directory path to save plots to.
+        patient (bool): determins if current plot is for a patient or a volunteer for accurate file naming on saving.
+        DFA_on (bool): determins if a plot should be created.
+    
+    
+    """
     if not DFA_on:
         print('DFA_on flag must be activated to plot the scaling pattern differences')
         return
@@ -1444,6 +1498,16 @@ def plotting_scaling_pattern_difference(scaling_patterns1,scaling_patterns2,type
 
 
 def scaling_pattern_difference_analysis(df,ax):
+    """
+    function to measure the range of gradient differences over patients to visualise how range changes over log(n)
+    interpolates the 2 scaling patterns to make sure that they are the same length so they can be subtracted.
+
+    Parameters:
+        df (pd.Dataframe): DataFrame containing the subtracted scaling patterns
+    Returns:
+        log_n_avg(np.ndarray): Array of mean log(n) values to be used as the x axis
+        gradient_range(np.ndarrray): Array of ranges of gradient_differences for each value of log(n)
+    """
     print(df)
     df[['interpolated_log_n','interpolated_gradient']]=df.apply(lambda row: interpolating_for_uniform(np.array(row['log_n_diff']), np.array(row['gradient_diff']),2,3), axis=1,result_type='expand')
     # analysing_data=np.array(list(zip(df['interpolated_log_n'],df['interpolated_gradient'].to_numpy())))
@@ -1646,7 +1710,7 @@ def main():
     #print(surrogate_dictionary)
     #surrogate_databasing(surrogate_dictionary,'IAAFT')
     print(metrics)
-    databasing(metrics,Flags)
+    databasing(metrics,Flags.patient_analysis)
     
 
 if __name__=="__main__":
