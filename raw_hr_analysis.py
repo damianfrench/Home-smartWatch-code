@@ -20,7 +20,7 @@ from matplotlib import colormaps
 import statsmodels.api as sm
 
 sys.path.append('/data/t/smartWatch/patients/completeData')
-from patient_analysis3 import patient_output
+# from patient_analysis3 import patient_output
 
 
 
@@ -92,7 +92,6 @@ def reading_sleep_Data(number,data_path,patient=True):
         sleep_data=(pd.read_csv(f'{data_path}/record{number}/sleep.csv',header=0))
     else:
         sleep_data=(pd.read_csv(f'{data_path}/{number}/sleep.csv',header=0))
-        print(f'{data_path}/{number}/sleep.csv')
     
     sleep_data['from']=pd.to_datetime(sleep_data['from'],format='ISO8601',utc=True)
     sleep_data['to']=pd.to_datetime(sleep_data['to'],format='ISO8601',utc=True)
@@ -375,7 +374,7 @@ def days_and_nights(data,number,patient,data_path,saving_path,Flag):
         return pd.DataFrame(),pd.DataFrame()
     average_bedtime=circular_mean(sleep_data,'from','to')
     average_wakeup=circular_mean(sleep_data,'from','to',first=False)
-    print(f'average wake up ={average_wakeup}\n average bedtime={average_bedtime}')
+    # print(f'average wake up ={average_wakeup}\n average bedtime={average_bedtime}')
     night_mask=(data['start'].dt.hour>=average_bedtime) | (data['start'].dt.hour<average_wakeup) # creates a mask for the night time data
     day_mask=(data['start'].dt.hour<average_bedtime) | (data['start'].dt.hour>=average_wakeup) # creates a mask for the day time data
     night_data=data[night_mask] # generates heart rate data for night
@@ -469,7 +468,6 @@ def resting_max_and_min(night_mask,day_mask,time_index,day_data,night_data,sleep
         else:
             resting_hr_val = np.nan
             HRV_night=np.nan
-        print(HRV_night)
         avg_HRV_night = np.mean(HRV_night) if len(night_vals) > 0 else np.nan
         std_HRV_night = np.std(HRV_night) if len(night_vals) > 0 else np.nan
 
@@ -524,7 +522,6 @@ def resting_max_and_min(night_mask,day_mask,time_index,day_data,night_data,sleep
     night_df=pd.DataFrame(night_results)
     nights_HRV_df=pd.DataFrame(nights_HRV_info)
     night_df=pd.merge(night_df,nights_HRV_df,on='night_dates')
-    print(night_df)
 
 
     return day_df,night_df
@@ -581,7 +578,6 @@ def plotting(data,number,data_path,saving_path,Flags=None):
     data['value']=np.array([
             np.mean([int(x) for x in item.split(',')])  # Split and convert to integers, then average
             for item in np.char.strip(data['value'].to_numpy('str'),'[]')])
-
     avg_hr_months,weeks,avg_week_hr,avg_hr_active_day,activities,time_y,months,day_df,night_df=None,None,None,None,None,np.array([]),None,None,None
     months,avg_hr_months=months_calc(data,number,saving_path,Flags.months)
     weeks,avg_week_hr=week_calc(data,number,saving_path,Flags.weeks)
@@ -883,77 +879,87 @@ def databasing(metrics,Flags=None):
     for i in range(len(patient_num)):
         cur.execute("INSERT INTO Patients(Patient_ID,overall_HR_avg,scaling_exponent_noise,scaling_exponent_linear,ECG_scaling_exponent_noise,ECG_scaling_exponent_linear,crossover_PPG,crossover_ECG) VALUES (?,?,?,?,?,?,?,?)",(metrics['Patient_num'][i],metrics['avg_hr_overall'][i],metrics['scaling_exponent_noise'][i],metrics['scaling_exponent_linear'][i],metrics['ECG_scaling_exponent_noise'][i],metrics['ECG_scaling_exponent_linear'][i],metrics['crossover_PPG'][i],metrics['crossover_ECG'][i]))
 
-
-    for idx, patient_id in enumerate(metrics['Patient_num']):
-        months=metrics['months'][idx]
-        avg_hrs=metrics['avg_hr_per_month'][idx]
-        for month_id, avg_hr in zip(months,avg_hrs):
-            cur.execute("""INSERT OR IGNORE INTO Months_HR(Patient_ID, Month, avg_HR) VALUES(?,?,?)""", (patient_id,month_id,avg_hr))
-        weeks=metrics['weeks'][idx]
-        avg_hrs=metrics['avg_hr_per_week'][idx]
-        for week_id, avg_hr in zip(weeks,avg_hrs):
-            cur.execute("""INSERT OR IGNORE INTO Weeks_HR(Patient_ID, Week, avg_HR) VALUES(?,?,?)""", (patient_id,week_id,avg_hr))
-    
-        dates=metrics['day_dates'][idx]
-        print('day dates',dates)
-        day_avg_hrs=metrics['day_avg'][idx]
-        day_min_hrs=metrics['day_min'][idx]
-        day_max_hrs=metrics['day_max'][idx]
-        resting_hrs=metrics['resting_hr'][idx]
-        avg_PPG_HRV_Days=metrics['avg_PPG_HRV_day'][idx]
-        std_PPG_HRV_Days=metrics['std_PPG_HRV_day'][idx]
+    try:
+        for idx, patient_id in enumerate(metrics['Patient_num']):
+            months=metrics['months'][idx]
+            avg_hrs=metrics['avg_hr_per_month'][idx]
+            for month_id, avg_hr in zip(months,avg_hrs):
+                cur.execute("""INSERT OR IGNORE INTO Months_HR(Patient_ID, Month, avg_HR) VALUES(?,?,?)""", (patient_id,month_id,avg_hr))
+            weeks=metrics['weeks'][idx]
+            avg_hrs=metrics['avg_hr_per_week'][idx]
+            for week_id, avg_hr in zip(weeks,avg_hrs):
+                cur.execute("""INSERT OR IGNORE INTO Weeks_HR(Patient_ID, Week, avg_HR) VALUES(?,?,?)""", (patient_id,week_id,avg_hr))
         
-
-        for date_id,day_avg_hr,day_min_hr,day_max_hr,resting_hr,avg_PPG_HRV_Day,std_PPG_HRV_Day in zip(dates,day_avg_hrs,day_min_hrs,day_max_hrs,resting_hrs,avg_PPG_HRV_Days,std_PPG_HRV_Days):
-            cur.execute("""INSERT OR IGNORE INTO Daily_Vitals(Patient_ID, Date, Day_avg_HR, Day_min_HR, Day_max_HR, Resting_HR, Avg_PPG_HRV_Day, Std_PPG_HRV_Day) VALUES(?,?,?,?,?,?,?,?)""", (patient_id,date_id,day_avg_hr,day_min_hr,day_max_hr,resting_hr,avg_PPG_HRV_Day, std_PPG_HRV_Day))
-        
-        avg_active_hrs=metrics['avg_hr_active'][idx]
-        active_dates=metrics['activities'][idx]   
-        
-        for avg_active_hr,active_date in zip(avg_active_hrs,active_dates):
-            date_vitals_id=cur.execute("""SELECT Date_Vitals FROM Daily_Vitals WHERE Patient_ID=? AND Date=?""",(patient_id,active_date)).fetchone()
-            if date_vitals_id:
-                cur.execute("""INSERT OR IGNORE INTO Activities(Date_Vitals, Avg_Active_HR) VALUES(?,?)""", (date_vitals_id[0],avg_active_hr))
-        
-        night_dates=metrics['night_dates'][idx]
-        night_avg_hrs=metrics['night_avg'][idx]
-        night_min_hrs=metrics['night_min'][idx]
-        night_max_hrs=metrics['night_max'][idx]
-        avg_PPG_HRV_Nights=metrics['avg_PPG_HRV_night'][idx]
-        std_PPG_HRV_Nights=metrics['std_PPG_HRV_night'][idx]
-        for night_date,night_avg_hr,night_min_hr,night_max_hr,avg_PPG_HRV_Night,std_PPG_HRV_Night in zip(night_dates,night_avg_hrs,night_min_hrs,night_max_hrs,avg_PPG_HRV_Nights,std_PPG_HRV_Nights):
-            date_vitals_id=cur.execute("""SELECT Date_Vitals FROM Daily_Vitals WHERE Patient_ID=? AND Date=?""",(patient_id,night_date)).fetchone()
-            if date_vitals_id:
-                cur.execute("""INSERT OR IGNORE INTO Night_vitals(Date_Vitals,Night_avg_HR, Night_min_HR, Night_max_HR, Avg_PPG_HRV_Night,Std_PPG_HRV_Night) VALUES(?,?,?,?,?,?)""",(date_vitals_id[0],night_avg_hr,night_min_hr,night_max_hr,avg_PPG_HRV_Night,std_PPG_HRV_Night))
-        
-        dates_plus_hours=metrics['ECG_dates_and_hours'][idx]
-        avg_ECG_HRVs=metrics['avg_ECG_HRV'][idx]
-        std_ECG_HRVs=metrics['std_ECG_HRV'][idx]
-        
-
-        for date_plus_hour,avg_ECG_HRV,std_ECG_HRV in zip(split_on_colon(dates_plus_hours),avg_ECG_HRVs,std_ECG_HRVs):
+            dates=metrics['day_dates'][idx]
+            print('day dates',dates)
+            day_avg_hrs=metrics['day_avg'][idx]
+            day_min_hrs=metrics['day_min'][idx]
+            day_max_hrs=metrics['day_max'][idx]
+            resting_hrs=metrics['resting_hr'][idx]
+            avg_PPG_HRV_Days=metrics['avg_PPG_HRV_day'][idx]
+            std_PPG_HRV_Days=metrics['std_PPG_HRV_day'][idx]
             
-            date_vitals_id=cur.execute("""SELECT Date_Vitals FROM Daily_Vitals WHERE Patient_ID=? AND Date=?""",(patient_id,date_plus_hour[0])).fetchone()
-            if date_vitals_id:
-                date_with_hour=':'.join(date_plus_hour)
-                cur.execute("""INSERT OR IGNORE INTO ECG_Vitals(Date_Plus_Hour, Avg_ECG_HRV, Std_ECG_HRV, Date_Vitals) VALUES(?,?,?,?)""",(date_with_hour, avg_ECG_HRV, std_ECG_HRV, date_vitals_id[0]))
+
+            for date_id,day_avg_hr,day_min_hr,day_max_hr,resting_hr,avg_PPG_HRV_Day,std_PPG_HRV_Day in zip(dates,day_avg_hrs,day_min_hrs,day_max_hrs,resting_hrs,avg_PPG_HRV_Days,std_PPG_HRV_Days):
+                cur.execute("""INSERT OR IGNORE INTO Daily_Vitals(Patient_ID, Date, Day_avg_HR, Day_min_HR, Day_max_HR, Resting_HR, Avg_PPG_HRV_Day, Std_PPG_HRV_Day) VALUES(?,?,?,?,?,?,?,?)""", (patient_id,date_id,day_avg_hr,day_min_hr,day_max_hr,resting_hr,avg_PPG_HRV_Day, std_PPG_HRV_Day))
             
-            # creating_or_updating_tables(con, 'Active', activities, patient_num, metrics['avg_hr_active'],metrics['activities']) # creates or updates the Active table with the average heart rate for each activity
-     #unique months in the metrics dictionary
-    months=sorted(np.unique(np.concatenate(metrics['months'])),key=lambda x: datetime.strptime(x, '%b %Y'))
-    # creating_or_updating_tables(con, 'Months', months, patient_num, metrics['avg_hr_per_month'],metrics['months']) # creates or updates the Months table with the average heart rate per month
+            avg_active_hrs=metrics['avg_hr_active'][idx]
+            active_dates=metrics['activities'][idx]   
+            
+            for avg_active_hr,active_date in zip(avg_active_hrs,active_dates):
+                date_vitals_id=cur.execute("""SELECT Date_Vitals FROM Daily_Vitals WHERE Patient_ID=? AND Date=?""",(patient_id,active_date)).fetchone()
+                if date_vitals_id:
+                    cur.execute("""INSERT OR IGNORE INTO Activities(Date_Vitals, Avg_Active_HR) VALUES(?,?)""", (date_vitals_id[0],avg_active_hr))
+            
+            night_dates=metrics['night_dates'][idx]
+            night_avg_hrs=metrics['night_avg'][idx]
+            night_min_hrs=metrics['night_min'][idx]
+            night_max_hrs=metrics['night_max'][idx]
+            avg_PPG_HRV_Nights=metrics['avg_PPG_HRV_night'][idx]
+            std_PPG_HRV_Nights=metrics['std_PPG_HRV_night'][idx]
+            for night_date,night_avg_hr,night_min_hr,night_max_hr,avg_PPG_HRV_Night,std_PPG_HRV_Night in zip(night_dates,night_avg_hrs,night_min_hrs,night_max_hrs,avg_PPG_HRV_Nights,std_PPG_HRV_Nights):
+                date_vitals_id=cur.execute("""SELECT Date_Vitals FROM Daily_Vitals WHERE Patient_ID=? AND Date=?""",(patient_id,night_date)).fetchone()
+                if date_vitals_id:
+                    cur.execute("""INSERT OR IGNORE INTO Night_vitals(Date_Vitals,Night_avg_HR, Night_min_HR, Night_max_HR, Avg_PPG_HRV_Night,Std_PPG_HRV_Night) VALUES(?,?,?,?,?,?)""",(date_vitals_id[0],night_avg_hr,night_min_hr,night_max_hr,avg_PPG_HRV_Night,std_PPG_HRV_Night))
+            
+            dates_plus_hours=metrics['ECG_dates_and_hours'][idx]
+            avg_ECG_HRVs=metrics['avg_ECG_HRV'][idx]
+            std_ECG_HRVs=metrics['std_ECG_HRV'][idx]
+    except Exception as e:
+        print(f'Error occured with: {e}')
+        
+        try:
+            for date_plus_hour,avg_ECG_HRV,std_ECG_HRV in zip(split_on_colon(dates_plus_hours),avg_ECG_HRVs,std_ECG_HRVs):
+                
+                date_vitals_id=cur.execute("""SELECT Date_Vitals FROM Daily_Vitals WHERE Patient_ID=? AND Date=?""",(patient_id,date_plus_hour[0])).fetchone()
+                if date_vitals_id:
+                    date_with_hour=':'.join(date_plus_hour)
+                    cur.execute("""INSERT OR IGNORE INTO ECG_Vitals(Date_Plus_Hour, Avg_ECG_HRV, Std_ECG_HRV, Date_Vitals) VALUES(?,?,?,?)""",(date_with_hour, avg_ECG_HRV, std_ECG_HRV, date_vitals_id[0]))
+        except Exception as e:
+            print(f"No ECG data:{e}")
 
-    for month in months:
-        cur.execute("""INSERT OR IGNORE INTO Months(Month) VALUES(?)""", (month,))
+    try:
+        #unique months in the metrics dictionary
+        months=sorted(np.unique(np.concatenate(metrics['months'])),key=lambda x: datetime.strptime(x, '%b %Y'))
 
-    weeks=sorted(np.unique(np.concatenate(metrics['weeks'])),key=lambda x: datetime.strptime(x, '%Y-W%W')) #unique weeks in the metrics dictionary
-    for week in weeks:
-        cur.execute("""INSERT OR IGNORE INTO Weeks(Week) VALUES(?)""", (week,))
-    # creating_or_updating_tables(con, 'Weeks', weeks, patient_num, metrics['avg_hr_per_week'],metrics['weeks']) # creates or updates the Weeks table with the average heart rate per week
+        for month in months:
+            cur.execute("""INSERT OR IGNORE INTO Months(Month) VALUES(?)""", (month,))
+    except Exception as e:
+        print(f'No month data:{e}')
 
-    dates=sorted(np.unique(np.concatenate(metrics['day_dates'])),key=lambda x: datetime.strptime(x, '%Y-%m-%d'))
-    for date in dates:
-        cur.execute("""INSERT OR IGNORE INTO Dates(Date) VALUES(?)""",(date,))
+    try:
+        weeks=sorted(np.unique(np.concatenate(metrics['weeks'])),key=lambda x: datetime.strptime(x, '%Y-W%W')) #unique weeks in the metrics dictionary
+        for week in weeks:
+            cur.execute("""INSERT OR IGNORE INTO Weeks(Week) VALUES(?)""", (week,))
+    except Exception as e:
+        print(f'No week data:{e}')
+
+    try:
+        dates=sorted(np.unique(np.concatenate(metrics['day_dates'])),key=lambda x: datetime.strptime(x, '%Y-%m-%d'))
+        for date in dates:
+            cur.execute("""INSERT OR IGNORE INTO Dates(Date) VALUES(?)""",(date,))
+    except:
+        print(f'No day data:{e}')
     
 
 
@@ -1378,7 +1384,13 @@ def avg_scaling_pattern(scaling_patterns):
 def plotting_scaling_pattern_difference(scaling_patterns1,scaling_patterns2,type1,type2,saving_path,patient=True,DFA_on=True):
     if not DFA_on:
         print('DFA_on flag must be activated to plot the scaling pattern differences')
-        return 
+        return
+    if scaling_patterns1.empty:
+        print('missing ECG data')
+        return
+    if scaling_patterns2.empty:
+        print('missing PPG data')
+        return
     print(np.shape(len(scaling_patterns1['gradient'])))
     merged=pd.merge(scaling_patterns1,scaling_patterns2,on='patient_num',suffixes=('_1','_2'))
     merged['gradient_diff']=merged['gradient_1']-merged['gradient_2']
@@ -1427,6 +1439,7 @@ def plotting_scaling_pattern_difference(scaling_patterns1,scaling_patterns2,type
     fig.savefig(f"{saving_path}/Graphs/scaling_patterns/{'patients' if patient==True else 'volunteers'}-{type1}-{type2}-difference.png")
     plt.close()
 
+
     
 
 
@@ -1459,7 +1472,13 @@ def plotting_average_scaling_pattern(scaling_patterns1,scaling_patterns2,type1,t
     """
     if not DFA_on:
         print('DFA_on flag must be activated to plot the average scaling patterns')
-        return np.nan,np.nan,np.nan,np.nan   
+        return np.nan,np.nan,np.nan,np.nan
+    if scaling_patterns1.empty:
+        print('missing PPG data')
+        return np.nan,np.nan,np.nan,np.nan
+    if scaling_patterns2.empty:
+        print('missing ECG data')
+        return np.nan,np.nan,np.nan,np.nan
     
     avg_gradient1, avg_log_n1, std1 = avg_scaling_pattern(scaling_patterns1)
     avg_gradient2, avg_log_n2, std2 = avg_scaling_pattern(scaling_patterns2)
@@ -1509,7 +1528,7 @@ def main():
     from scipy.fft import fft, ifft, fftshift, ifftshift
     from scipy.interpolate import interp1d
     flags=namedtuple('Flags',['months','weeks','activities','total','day_night','plot_DFA','patient_analysis'])
-    Flags=flags(True,True,True,True,True,False,False)
+    Flags=flags(False,False,False,False,False,True,False)
     if Flags.plot_DFA:
         iterable=[Flags.months,Flags.weeks,Flags.activities,True,Flags.day_night,Flags.plot_DFA,Flags.patient_analysis]
         Flags=flags._make(iterable)
@@ -1562,7 +1581,7 @@ def main():
     scaling_pattern_ECG_rows=[]
     scaling_pattern_PPG_rows=[]
     volunteer_nums=['data_001_1636025623','data_CHE_1753362494','data_AMC_1633769065','data_AMC_1636023599','data_LEE_1636026567','data_DAM_1753261083','data_JAS_1753260728','data_CHA_1753276549','data_DAM_1752828759']
-    for i in range(5,10):
+    for i in range(5,12):
         print(i)
         if Flags.patient_analysis:
             if i==42 or i==24:
@@ -1575,7 +1594,7 @@ def main():
             patientNum=volunteer_nums[i-2]
         else:
             break
-
+        print(patientNum)
         try:
             ECG_RR,ECG_R_times=patient_output(patientNum,patient=Flags.patient_analysis)
             ECG_RR,ECG_df=ECG_HRV(ECG_RR,ECG_R_times,patientNum,saving_path)
@@ -1592,29 +1611,30 @@ def main():
         except Exception as e:
             print(f"ECG error for patient {patientNum}: {e}")
             # traceback.print_exc()
+            H_hat_ECG=(np.nan,np.nan,np.nan)
+            ECG_df=pd.DataFrame()
+            pass
+        try:
+            heartRateData_sorted=sortingHeartRate(patientNum,data_path,patient=Flags.patient_analysis)
+            RR=plotting(heartRateData_sorted,patientNum,data_path,saving_path,Flags)
+            if RR['HRV'].size<1000:
+                print('not enough PPG data to perform DFA analysis')
+                # scaling_patterns_PPG.loc[i]=[[],[]]
+                H_hat=(np.nan,np.nan,np.nan)
+            else:
+                H_hat,m,log_n=DFA_analysis(RR['HRV'],patientNum,'PPG',saving_path,plot=Flags.plot_DFA)
+                scaling_pattern_PPG_rows.append({'patient_num':patientNum,
+                                                    'gradient':m,
+                                                    'log_n':log_n
+                    })
+        except Exception as e:
+            print(f"PPG error for patient {patientNum}: {e}")
+            #traceback.print_exc()
             continue
-        # try:
-        heartRateData_sorted=sortingHeartRate(patientNum,data_path,patient=Flags.patient_analysis)
-        RR=plotting(heartRateData_sorted,patientNum,data_path,saving_path,Flags)
-        if RR['HRV'].size<1000:
-            print('not enough PPG data to perform DFA analysis')
-            # scaling_patterns_PPG.loc[i]=[[],[]]
-            H_hat=(np.nan,np.nan,np.nan)
-        else:
-            H_hat,m,log_n=DFA_analysis(RR['HRV'],patientNum,'PPG',saving_path,plot=Flags.plot_DFA)
-            scaling_pattern_PPG_rows.append({'patient_num':patientNum,
-                                                'gradient':m,
-                                                'log_n':log_n
-                })
-        # except Exception as e:
-        #     print(f"PPG error for patient {patientNum}: {e}")
-        #     #traceback.print_exc()
-        #     continue
         
         #surrogate_data=surrogate(RR[0])
 
 
-        print(ECG_df)
 
         
         
