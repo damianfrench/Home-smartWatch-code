@@ -122,7 +122,7 @@ def split_on_colon(data):
 def only_yearAndmonth(data):
     return np.vstack(np.array([d[:7] for d in data]))
 
-def months_calc(data,number,saving_path):
+def months_calc(data,number,saving_path,Flag):
     """
     Calculate and plot average heart rate for each unique month in the dataset.
 
@@ -158,24 +158,27 @@ def months_calc(data,number,saving_path):
         month_data=data[mask]
         month_x=month_data['start']
         month_y = month_data['value']
-        fig,ax=plt.subplots(figsize=(12,6),layout='constrained')
-        ax.set_title('Heart rate for month {}'.format(m))
-        ax.plot(month_x,month_y,label='HR data') # plots the heart rate data for this month
-        ax.set_xlabel('Date')
-        ax.set_ylabel('Heart rate [bpm]')
-        ax.tick_params(axis='x',labelrotation=45,length=0.1)
-        
-        ax.legend()
-        plt.show()
-        #Path("/data/t/smartWatch/patients/completeData/DamianInternshipFiles/heartRateRecord{}".format(number)).mkdir(exist_ok=True) # creating new directory
-        fig.savefig(f'{saving_path}/heartRateRecord{number}/month-{m}')
-        plt.close()
+        if Flag:
+            fig,ax=plt.subplots(figsize=(12,6),layout='constrained')
+            ax.set_title('Heart rate for month {}'.format(m))
+            ax.plot(month_x,month_y,label='HR data') # plots the heart rate data for this month
+            ax.set_xlabel('Date')
+            ax.set_ylabel('Heart rate [bpm]')
+            ax.tick_params(axis='x',labelrotation=45,length=0.1)
+            
+            ax.legend()
+            plt.show()
+            #Path("/data/t/smartWatch/patients/completeData/DamianInternshipFiles/heartRateRecord{}".format(number)).mkdir(exist_ok=True) # creating new directory
+            fig.savefig(f'{saving_path}/heartRateRecord{number}/month-{m}')
+            plt.close()
+        else:
+            pass
         avg_hr_per_month.append(np.average(month_y)) # averages the hr for that month
     
 
     return months,avg_hr_per_month
 
-def week_calc(data,number,saving_path):
+def week_calc(data,number,saving_path,Flag):
     """
     Calculate and plot average heart rate for each unique ISO week in the dataset.
 
@@ -213,22 +216,25 @@ def week_calc(data,number,saving_path):
         week_x=week_data['start']
         week_y = week_data['value']
         avg_hr_weekly.append(np.average(week_y)) # averages the hr for that weeks
-        fig,ax=plt.subplots(figsize=(12,6),layout='constrained')
-        ax.set_title('Heart rate for week {}'.format(w))
-        ax.plot(week_x,week_y,label='HR data') # plots the heart rate data for this week
-        ax.set_xlabel('Date')
-        ax.set_ylabel('Heart rate [bpm]')
-        ax.tick_params(axis='x',labelrotation=45,length=0.1)
+        if Flag:
+            fig,ax=plt.subplots(figsize=(12,6),layout='constrained')
+            ax.set_title('Heart rate for week {}'.format(w))
+            ax.plot(week_x,week_y,label='HR data') # plots the heart rate data for this week
+            ax.set_xlabel('Date')
+            ax.set_ylabel('Heart rate [bpm]')
+            ax.tick_params(axis='x',labelrotation=45,length=0.1)
+            
+            ax.legend()
+            plt.show()
+            #Path("/data/t/smartWatch/patients/completeData/DamianInternshipFiles/heartRateRecord{}".format(number)).mkdir(exist_ok=True) # creating new directory
+            fig.savefig(f'{saving_path}/heartRateRecord{number}/week-{w}')
+            plt.close()
+        else:
+            pass
         
-        ax.legend()
-        plt.show()
-        #Path("/data/t/smartWatch/patients/completeData/DamianInternshipFiles/heartRateRecord{}".format(number)).mkdir(exist_ok=True) # creating new directory
-        fig.savefig(f'{saving_path}/heartRateRecord{number}/week-{w}')
-        plt.close()
-    
     return weeks,avg_hr_weekly
 
-def active_days_calc(data,number,patient,data_path,saving_path):
+def active_days_calc(data,number,patient,data_path,saving_path,Flag):
     """
     Calculate and plot average heart rate for each day with recorded activity.
 
@@ -269,29 +275,32 @@ def active_days_calc(data,number,patient,data_path,saving_path):
     for day in active_dates: # loops through the days activity was done on
         mask=normalised_time_index==day   
         day_data=data[mask]
-        fig,ax=plt.subplots(figsize=(12,6),layout='constrained')
-        ax.set_title('Heart rate on  day with activity: {}'.format(day))
         day_x= day_data['start']
         day_y = day_data['value']
-        ax.plot(day_x,day_y,label='HR data')
-        ax.set_xlabel('Dates')
-        ax.set_ylabel('Heart rate [bpm]')
         avg_hr_active_days.append(np.average(day_y))
-        day_mask=start_time_index==day # creates a mask for the current day
-        active_starts=start[day_mask] # generates the datetime objects for the activities done on the current day
-        active_ends=end[day_mask]
-        for i in active_starts:
-            ax.axvline(pd.to_datetime(i, format='ISO8601',utc=True),color='red')
-        for j in active_ends:
-            ax.axvline(pd.to_datetime(j, format='ISO8601',utc=True),color='red')
-        ax.tick_params(axis='x',labelrotation=90,length=0.1)
-        ax.legend()
-        plt.show()
-        fig.savefig(f'{saving_path}/heartRateRecord{number}/{day}')
-        plt.close()
+        if Flag:
+            fig,ax=plt.subplots(figsize=(12,6),layout='constrained')
+            ax.set_title('Heart rate on  day with activity: {}'.format(day))
+            ax.plot(day_x,day_y,label='HR data')
+            ax.set_xlabel('Dates')
+            ax.set_ylabel('Heart rate [bpm]')
+            day_mask=start_time_index==day # creates a mask for the current day
+            active_starts=start[day_mask] # generates the datetime objects for the activities done on the current day
+            active_ends=end[day_mask]
+            for i in active_starts:
+                ax.axvline(pd.to_datetime(i, format='ISO8601',utc=True),color='red')
+            for j in active_ends:
+                ax.axvline(pd.to_datetime(j, format='ISO8601',utc=True),color='red')
+            ax.tick_params(axis='x',labelrotation=90,length=0.1)
+            ax.legend()
+            plt.show()
+            fig.savefig(f'{saving_path}/heartRateRecord{number}/{day}')
+            plt.close()
+        else:
+            pass
     return avg_hr_active_days,active_dates
 
-def total_timespan(data,number,saving_path):
+def total_timespan(data,number,saving_path,Flag):
     """
     Plots heart rate over the entire timespan of the dataset and return heart rate values as a NumPy array.
 
@@ -321,20 +330,23 @@ def total_timespan(data,number,saving_path):
     """
     time_y = data['value']  # extracts the heart rate values from the data
     time_x=data['start']
-    fig,ax=plt.subplots(figsize=(12,6),layout='constrained')
-    ax.set_title('Heart rate over study')
-    ax.plot(time_x,time_y,label='HR data')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Heart rate [bpm]')
-    ax.axhline(np.average(time_y),color='red')
-    ax.tick_params(axis='x',labelrotation=90,length=0.1)
-    ax.legend()
-    plt.show()
-    fig.savefig(f'{saving_path}/heartRateRecord{number}/Full')
-    plt.close()
+    if Flag:
+        fig,ax=plt.subplots(figsize=(12,6),layout='constrained')
+        ax.set_title('Heart rate over study')
+        ax.plot(time_x,time_y,label='HR data')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Heart rate [bpm]')
+        ax.axhline(np.average(time_y),color='red')
+        ax.tick_params(axis='x',labelrotation=90,length=0.1)
+        ax.legend()
+        plt.show()
+        fig.savefig(f'{saving_path}/heartRateRecord{number}/Full')
+        plt.close()
+    else:
+        pass
     return time_y.to_numpy(dtype=np.float64)
 
-def days_and_nights(data,number,patient,data_path,saving_path):
+def days_and_nights(data,number,patient,data_path,saving_path,Flag):
     """
     Analyze and plot night-time heart rate data, then calculate daily heart rate statistics.
 
@@ -372,17 +384,20 @@ def days_and_nights(data,number,patient,data_path,saving_path):
     day_y=day_data['value']  # extracts the heart rate values from the data
     night_x=night_data['start']
     day_x=day_data['start']
-    fig,ax=plt.subplots(figsize=(12,6),layout='constrained')
-    ax.set_title('Heart rates over study - nights only')
-    ax.plot(night_x,night_y,label='HR data')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Heart rate [bpm]')
-    ax.axhline(np.average(night_y),color='red')
-    ax.tick_params(axis='x',labelrotation=90,length=0.1)
-    ax.legend()
-    plt.show()
-    fig.savefig(f'{saving_path}/heartRateRecord{number}/FullNight')
-    plt.close()
+    if Flag:
+        fig,ax=plt.subplots(figsize=(12,6),layout='constrained')
+        ax.set_title('Heart rates over study - nights only')
+        ax.plot(night_x,night_y,label='HR data')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Heart rate [bpm]')
+        ax.axhline(np.average(night_y),color='red')
+        ax.tick_params(axis='x',labelrotation=90,length=0.1)
+        ax.legend()
+        plt.show()
+        fig.savefig(f'{saving_path}/heartRateRecord{number}/FullNight')
+        plt.close()
+    else:
+        pass
     day_df,night_df=resting_max_and_min(night_mask,day_mask,data['start'].dt,day_y,night_y,sleep_data)
 
     return day_df,night_df
@@ -568,16 +583,11 @@ def plotting(data,number,data_path,saving_path,Flags=None):
             for item in np.char.strip(data['value'].to_numpy('str'),'[]')])
 
     avg_hr_months,weeks,avg_week_hr,avg_hr_active_day,activities,time_y,months,day_df,night_df=None,None,None,None,None,np.array([]),None,None,None
-    if Flags.months:
-        months,avg_hr_months=months_calc(data,number,saving_path)
-    if Flags.weeks:
-        weeks,avg_week_hr=week_calc(data,number,saving_path)
-    if Flags.activities:
-        avg_hr_active_day,activities=active_days_calc(data,number,Flags.patient_analysis,data_path,saving_path)
-    if Flags.total:
-        time_y=total_timespan(data,number,saving_path)
-    if Flags.day_night :
-        day_df,night_df=days_and_nights(data,number,p,data_path,saving_path)
+    months,avg_hr_months=months_calc(data,number,saving_path,Flags.months)
+    weeks,avg_week_hr=week_calc(data,number,saving_path,Flags.weeks)
+    avg_hr_active_day,activities=active_days_calc(data,number,Flags.patient_analysis,data_path,saving_path,Flags.activities)
+    time_y=total_timespan(data,number,saving_path,Flags.total)
+    day_df,night_df=days_and_nights(data,number,Flags.patient_analysis,data_path,saving_path,Flags.day_night)
     return {"HRV":1/time_y,
             "avg_hr_per_month":avg_hr_months,
             "avg_hr_overall":np.average(time_y),
@@ -875,17 +885,15 @@ def databasing(metrics,Flags=None):
 
 
     for idx, patient_id in enumerate(metrics['Patient_num']):
-        if Flags.months:
-            months=metrics['months'][idx]
-            avg_hrs=metrics['avg_hr_per_month'][idx]
-            for month_id, avg_hr in zip(months,avg_hrs):
-                cur.execute("""INSERT OR IGNORE INTO Months_HR(Patient_ID, Month, avg_HR) VALUES(?,?,?)""", (patient_id,month_id,avg_hr))
-        if Flags.weeks:
-            weeks=metrics['weeks'][idx]
-            avg_hrs=metrics['avg_hr_per_week'][idx]
-            for week_id, avg_hr in zip(weeks,avg_hrs):
-                cur.execute("""INSERT OR IGNORE INTO Weeks_HR(Patient_ID, Week, avg_HR) VALUES(?,?,?)""", (patient_id,week_id,avg_hr))
-        
+        months=metrics['months'][idx]
+        avg_hrs=metrics['avg_hr_per_month'][idx]
+        for month_id, avg_hr in zip(months,avg_hrs):
+            cur.execute("""INSERT OR IGNORE INTO Months_HR(Patient_ID, Month, avg_HR) VALUES(?,?,?)""", (patient_id,month_id,avg_hr))
+        weeks=metrics['weeks'][idx]
+        avg_hrs=metrics['avg_hr_per_week'][idx]
+        for week_id, avg_hr in zip(weeks,avg_hrs):
+            cur.execute("""INSERT OR IGNORE INTO Weeks_HR(Patient_ID, Week, avg_HR) VALUES(?,?,?)""", (patient_id,week_id,avg_hr))
+    
         dates=metrics['day_dates'][idx]
         print('day dates',dates)
         day_avg_hrs=metrics['day_avg'][idx]
@@ -947,9 +955,6 @@ def databasing(metrics,Flags=None):
     for date in dates:
         cur.execute("""INSERT OR IGNORE INTO Dates(Date) VALUES(?)""",(date,))
     
-    # activities=sorted(np.unique(np.concatenate(metrics['activities'])),key=lambda x: datetime.strptime(x, '%Y-%m-%d')) #unique activities in the metrics dictionary
-    # for activity in activities:
-    #     cur.execute("""INSERT OR IGNORE INTO Activities()""")
 
 
 
